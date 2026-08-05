@@ -306,7 +306,14 @@ struct RootPaletteView: View {
         }
         .onAppear { searchFocused = true }
         // Typing/clearing/overflow/settings all flip `paletteIsCollapsed`; resize the window to match.
-        .onChange(of: core.paletteIsCollapsed) { core.syncPaletteSize() }
+        .onChange(of: core.paletteIsCollapsed) {
+            core.syncPaletteSize()
+            guard !core.paletteIsCollapsed else { return }
+            // Compact mode unmounts the list, so re-emit after expansion when it can consume the intent.
+            DispatchQueue.main.async {
+                scroll = ScrollIntent(kind: .top)
+            }
+        }
         // ⌘1–⌘5 launch the compact bar's favorite slots (or expand, for the "…" overflow slot).
         .onKeyPress(keys: ["1", "2", "3", "4", "5"], phases: .down) { press in
             guard isCollapsed, settings.showFavoritesInCompactMode,
